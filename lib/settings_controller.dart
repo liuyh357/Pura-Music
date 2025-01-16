@@ -6,7 +6,7 @@ Map<String, dynamic> decodeJson(String jsonString){
     return result;
 }
 
-void saveJson(Map<String, dynamic> data, String filePath){
+Future<void> saveJson(Map<String, dynamic> data, String filePath)async{
   var jsonString = jsonEncode(data);
   File(filePath).writeAsStringSync(jsonString);
 }

@@ -5,9 +5,10 @@ import 'package:pura_music/pura_page_all_songs.dart';
 import 'package:pura_music/settings.dart';
 
 class PuraMainPageView extends StatefulWidget {
-  const PuraMainPageView({Key? key}) : super(key: key);
+  const PuraMainPageView({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _PuraMainPageViewState createState() => _PuraMainPageViewState();
 }
 

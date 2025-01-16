@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pura_music/pura_app_bar.dart';
+import 'package:pura_music/pura_main_app_bar.dart';
+import 'package:pura_music/pura_main_bottom_bar.dart';
 import 'package:pura_music/pura_main_page_view.dart';
 import 'package:pura_music/pura_navigation_rail.dart';
+import 'package:pura_music/pura_page_play.dart';
 import 'package:window_manager/window_manager.dart';
 import 'data_controller.dart';
 
@@ -23,8 +25,13 @@ Future<void> main() async {
     await windowManager.show();
     await windowManager.focus();
   });
+
+  // 设置 ImageCache 的最大数量和大小
+  PaintingBinding.instance.imageCache.maximumSize = 300; // 最大图像条目
+  PaintingBinding.instance.imageCache.maximumSizeBytes =
+      100 * 1024 * 1024; // 最大字节数（100MB）
   runApp(ChangeNotifierProvider(
-      create: (context) => DataController(), child: const MyApp()));
+      create: (context) => DataController.getInstance(), child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -32,9 +39,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      // 初始路由
+      initialRoute: '/',
+      // 显式设置路由
+      routes: {
+        '/': (context) => const MyHomePage(title: 'Pura Music'),
+        '/play': (context) => const PuraPagePlay(),
+      },
       title: 'Pura Music',
-      home: MyHomePage(title: 'Pura Music'),
+      // home: const MyHomePage(title: 'Pura Music'),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -53,23 +67,39 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     // var screenSize = MediaQuery.of(context).size;
-    return Scaffold(
-      appBar: PuraAppBar(title: widget.title),
-      body: Center(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const PuraNavigationRail(),
-            const VerticalDivider(
-              width: 1,
-              color: Color.fromRGBO(230, 230, 230, 1.0),
-            ),
-            Text(Provider.of<DataController>(context)
-                .indexOfPuraNavigationRail
-                .toString()),
-            const PuraMainPageView(),
-          ],
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+          gradient: LinearGradient(colors: [
+        Color.fromARGB(255, 236, 194, 194),
+        Color.fromARGB(255, 238, 151, 145)
+      ])),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: PuraMainAppBar(title: widget.title),
+        body: const Center(
+          child: Stack(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PuraNavigationRail(),
+                  // VerticalDivider(
+                  //   width: 1,
+                  //   color: Color.fromRGBO(230, 230, 230, 1.0),
+                  // ),
+                  // Text(Provider.of<DataController>(context)
+                  //     .indexOfPuraNavigationRail
+                  //     .toString()),
+                  PuraMainPageView(),
+                ],
+              ),
+              Align(
+                  alignment: Alignment.bottomCenter,
+                  child: PuraMainBottomBar()),
+            ],
+          ),
         ),
+        // bottomNavigationBar: PuraMainBottomBar(),
       ),
     );
   }

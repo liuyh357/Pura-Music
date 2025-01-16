@@ -14,19 +14,31 @@ class _SettingsState extends State<Settings> {
   Widget build(BuildContext context) {
     var dataController = Provider.of<DataController>(context, listen: true);
     var settings = dataController.settings;
-    var musicFolders = dataController.musicFolders;
+    List<String> musicFolders = List<String>.from(
+        settings['musicFolders'].map((e) => e.toString().split('\\').last));
+    var musicFs = dataController.musicFolders.keys.toList();
     var allMusic = dataController.allMusic;
     var keys = settings.keys.toList();
-    var keys1 = musicFolders.keys.toList();
-    return Container(
-      child: ListView.builder(itemCount: allMusic.length,itemBuilder: (context, index) {
-        return Row(
-          children: [
-            // Text("${keys1[index]} : ${musicFolders[keys1[index]].toString()}"),
-            Text(allMusic[index]),
-          ],
-        );
-      }),
+    // var keys1 = musicFolders.keys.toList();
+    return Row(
+      children: [
+        Flexible(
+            child: ListView.builder(
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(musicFolders[index]),
+                  );
+                },
+                itemCount: musicFolders.length)),
+        Flexible(
+            child: ListView.builder(
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(musicFs[index]),
+                  );
+                },
+                itemCount: musicFs.length)),
+      ],
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,60 +14,113 @@ class PuraPageAllSongs extends StatefulWidget {
   _PuraPageAllSongsState createState() => _PuraPageAllSongsState();
 }
 
-class _PuraPageAllSongsState extends State<PuraPageAllSongs> {
+class _PuraPageAllSongsState extends State<PuraPageAllSongs>
+    with AutomaticKeepAliveClientMixin {
+  int count = 0;
   @override
   Widget build(BuildContext context) {
-    var screenWidth = MediaQuery.of(context).size.width;
+    super.build(context); // 确保调用 super.build 以保持状态
+    count++;
+    var screenWidth = MediaQuery.sizeOf(context).width;
     var dataController = Provider.of<DataController>(context, listen: false);
-    return Column(
-        // padding: const EdgeInsets.only(left: 10, right: 10),
-        children: [
-          IconButton(
-            onPressed: () async {
-              String? path = await FilePicker.platform.getDirectoryPath();
-              if (context.mounted) {
-                dataController.addMusicFolder(path!);
-              }
-            },
-            icon: const Icon(Icons.add),
-          ),
-          IconButton(
-            onPressed: () async {
-              String? path = await FilePicker.platform.getDirectoryPath();
-              if (context.mounted) {
-                dataController.removeMusicFolder(path!);
-              }
-            },
-            icon: const Icon(Icons.delete),
-          ),
-          IconButton(
-            onPressed: () {
-              dataController.getMusicInfo(' ');
-            },
-            icon: const Icon(Icons.telegram_sharp),
+    return ColoredBox(
+      color: const Color.fromARGB(0, 232, 239, 243),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 10),
+        child: Column(children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: () async {
+                  String? path = await FilePicker.platform.getDirectoryPath();
+                  if (context.mounted && path != null) {
+                    setState(() {
+                      dataController.addMusicFolder(folderPath: path);
+                      print("add music folder: $path");
+                    });
+                  }
+                },
+                icon: const Icon(Icons.add),
+              ),
+              IconButton(
+                onPressed: () async {
+                  String? path = await FilePicker.platform.getDirectoryPath();
+                  if (context.mounted && path != null) {
+                    setState(() {
+                      dataController.removeMusicFolder(folderPath: path);
+                      print("remove music folder: $path");
+                    });
+                  }
+                },
+                icon: const Icon(Icons.delete),
+              ),
+              Text("重新渲染次数：$count"),
+            ],
           ),
           Expanded(
-            child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount:
-                        screenWidth ~/ 200 > 6 ? 6 : screenWidth ~/ 200,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10),
-                itemCount: dataController.allMusic.length,
-                itemBuilder: (context, index) {
-                  var info = dataController
-                      .getMusicInfo(dataController.allMusic[index]);
-                  String songName = info['title'].toString();
-                  String artistName = info['artist'].toString();
-                  String albumName = info['album'].toString();
+            child: Selector<DataController,
+                (Map<String, Uint8List>, List<String>)>(
+              selector: (context, dataController) =>
+                  (dataController.musicImages, dataController.allMusic),
+              shouldRebuild: (prev, next) => prev.$2.length != next.$2.length,
+              builder: (context, data, child) {
+                return GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            screenWidth ~/ 200 > 7 ? 7 : screenWidth ~/ 200,
+                        childAspectRatio: 0.80,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10),
+                    itemCount: dataController.allMusic.length +
+                        (screenWidth ~/ 200 > 7 ? 7 : screenWidth ~/ 200),
+                    itemBuilder: (context, index) {
+                      if (index < dataController.allMusic.length) {
+                        // print("allmusic length: ${dataController.allMusic.length}");
+                        // print("allmusic: ${dataController.allMusic}");
+                        // 记录图片加载开始时间
+                        // DateTime startTime = DateTime.now();
+                        var filePath = dataController.allMusic[index];
+                        var info = dataController.getMusicInfoByPath(filePath);
+                        String songName = info['title']!;
+                        String artistName = info['artist']!;
+                        String albumName = info['album']!;
 
-                  return PuraPageAllSongsCard(
-                    songName: songName,
-                    artistName: artistName,
-                    albumName: albumName,
-                  );
-                }),
+                        var imgBytes =
+                            dataController.getMusicImage(artistName, albumName);
+                        Image img;
+                        if (imgBytes != null) {
+                          img = Image.memory(imgBytes);
+                        } else {
+                          img = Image.asset(
+                              'assets/images/PuraMusicIcon1_square.png');
+                        }
+                        // 记录图片加载结束时间
+                        // DateTime endTime = DateTime.now();
+
+                        return Column(
+                          children: [
+                            PuraPageAllSongsCard(
+                              songName: songName,
+                              artistName: artistName,
+                              albumName: albumName,
+                              index: index,
+                              child: img,
+                            ),
+                            // Text(
+                            //     "加载耗时：${endTime.difference(startTime).inMilliseconds}ms"),
+                          ],
+                        );
+                      }
+                      return Container();
+                    });
+              },
+            ),
           ),
-        ]);
+        ]),
+      ),
+    );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
