@@ -1,16 +1,17 @@
 import 'dart:ui';
-
-import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pura_music/data_controller.dart';
 import 'package:pura_music/pura_page_play.dart';
-import 'tools.dart';
+import 'package:pura_music/ui/pura_hover_icon_button.dart';
+import 'package:pura_music/ui/pura_progress_bar.dart';
+// import 'tools.dart';
 
 class PuraMainBottomBar extends StatefulWidget {
   const PuraMainBottomBar({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _PuraMainBottomBarState createState() => _PuraMainBottomBarState();
 }
 
@@ -87,21 +88,20 @@ class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
                                   color: Color.fromARGB(255, 108, 108, 108),
                                   offset: Offset(0, 0),
                                   blurRadius: 20)
-                            ], color: Colors.white)
-                                .useSystemChineseFont(),
+                            ], color: Colors.white),
                           ),
                           Hero(
                             tag: 'controlButtons',
                             child: Row(
                               children: [
-                                HoverIconButton(
+                                PuraHoverIconButton(
                                   icon: const Icon(Icons.skip_previous,
                                       color: Colors.white),
                                   onPressed: () {
                                     dataController.previousMusic();
                                   },
                                 ),
-                                HoverIconButton(
+                                PuraHoverIconButton(
                                   icon: dataController.isPlaying
                                       ? const Icon(Icons.pause,
                                           color: Colors.white)
@@ -116,7 +116,7 @@ class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
                                     }
                                   },
                                 ),
-                                HoverIconButton(
+                                PuraHoverIconButton(
                                   icon: const Icon(Icons.skip_next,
                                       color: Colors.white),
                                   onPressed: () {
@@ -136,16 +136,16 @@ class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
                                     // Text('position: $position'),
                                     Hero(
                                       tag: 'progress',
-                                      child: ProgressBar(
+                                      child: PuraProgressBar(
                                         width: size.width / 2,
                                         height: 20,
                                         onDragEnd: (p0) {
-                                          print('drag end: $p0');
+                                          // print('drag end: $p0');
                                           dataController.setPosition(p0);
                                         },
                                         maxProgress: double.parse(duration),
                                         showPercentage: false,
-                                        progressFormat: ProgressFormat.decimal,
+                                        progressFormat: PuraProgressFormat.decimal,
                                         progress: position,
                                       ),
                                     ),

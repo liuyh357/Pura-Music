@@ -1,6 +1,4 @@
 import 'dart:ui';
-
-import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -40,12 +38,9 @@ class PuraPageAllSongsCard extends StatelessWidget {
           child: _MusicPicture(
               dataController: dataController, index: index, child: child),
         ),
-        Text(songName,
-            style: const TextStyle(overflow: TextOverflow.ellipsis)
-                .useSystemChineseFont()),
+        Text(songName, style: const TextStyle(overflow: TextOverflow.ellipsis)),
         Text("$artistName-$albumName",
-            style: const TextStyle(overflow: TextOverflow.ellipsis)
-                .useSystemChineseFont()),
+            style: const TextStyle(overflow: TextOverflow.ellipsis)),
       ],
     );
   }

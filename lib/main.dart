@@ -1,3 +1,4 @@
+import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pura_music/pura_main_app_bar.dart';
@@ -50,6 +51,31 @@ class MyApp extends StatelessWidget {
       title: 'Pura Music',
       // home: const MyHomePage(title: 'Pura Music'),
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        textTheme: TextTheme(
+          displayLarge: const TextStyle().useSystemChineseFont(),
+          displayMedium: const TextStyle().useSystemChineseFont(),
+          displaySmall: const TextStyle().useSystemChineseFont(),
+          headlineLarge: const TextStyle().useSystemChineseFont(),
+          headlineMedium: const TextStyle().useSystemChineseFont(),
+          headlineSmall: const TextStyle().useSystemChineseFont(),
+          titleLarge: const TextStyle().useSystemChineseFont(),
+          titleMedium: const TextStyle().useSystemChineseFont(),
+          titleSmall: const TextStyle().useSystemChineseFont(),
+          bodyLarge: const TextStyle().useSystemChineseFont(),
+          bodyMedium: const TextStyle().useSystemChineseFont(),
+          bodySmall: const TextStyle().useSystemChineseFont(),
+          labelLarge: const TextStyle().useSystemChineseFont(),
+          labelMedium: const TextStyle().useSystemChineseFont(),
+          labelSmall: const TextStyle().useSystemChineseFont(),
+
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            textStyle: const TextStyle().useSystemChineseFont(),
+          )
+        )
+      ),
     );
   }
 }

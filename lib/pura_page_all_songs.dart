@@ -1,14 +1,14 @@
 import 'dart:typed_data';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pura_music/data_controller.dart';
 import 'package:pura_music/pura_page_all_songs_card.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:pura_music/util/file_utils.dart';
 
 class PuraPageAllSongs extends StatefulWidget {
-  const PuraPageAllSongs({Key? key}) : super(key: key);
+  const PuraPageAllSongs({super.key});
 
   @override
   _PuraPageAllSongsState createState() => _PuraPageAllSongsState();
@@ -32,7 +32,8 @@ class _PuraPageAllSongsState extends State<PuraPageAllSongs>
             children: [
               IconButton(
                 onPressed: () async {
-                  String? path = await FilePicker.platform.getDirectoryPath();
+                  var result = await FileUtils.pickFolder(context);
+                  var path = result?.$1;
                   if (context.mounted && path != null) {
                     setState(() {
                       dataController.addMusicFolder(folderPath: path);
@@ -44,7 +45,8 @@ class _PuraPageAllSongsState extends State<PuraPageAllSongs>
               ),
               IconButton(
                 onPressed: () async {
-                  String? path = await FilePicker.platform.getDirectoryPath();
+                  var result = await FileUtils.pickFolder(context);
+                  var path = result?.$1;
                   if (context.mounted && path != null) {
                     setState(() {
                       dataController.removeMusicFolder(folderPath: path);

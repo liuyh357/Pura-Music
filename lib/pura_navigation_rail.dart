@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pura_music/data_controller.dart';
-import 'package:chinese_font_library/chinese_font_library.dart';
 
 class PuraNavigationRail extends StatefulWidget {
-  const PuraNavigationRail({Key? key}) : super(key: key);
+  const PuraNavigationRail({super.key});
 
   @override
   _PuraNavigationRailState createState() => _PuraNavigationRailState();
@@ -26,7 +25,7 @@ class _PuraNavigationRailState extends State<PuraNavigationRail> {
                 clipBehavior: Clip.antiAlias,
             child: DecoratedBox(
               decoration: const BoxDecoration(
-                color: Color.fromRGBO(255, 255, 255, 0.5),
+                color: Color.fromRGBO(110, 110, 110, 0.498),
                 // borderRadius: BorderRadius.all(Radius.circular(10.0)),
               ),
               child: NavigationRail(
@@ -38,28 +37,27 @@ class _PuraNavigationRailState extends State<PuraNavigationRail> {
                 selectedIconTheme: const IconThemeData(color: Colors.white),
                 indicatorColor: Colors.blue,
                 // elevation: 13.0,
-                destinations: <NavigationRailDestination>[
+                destinations: const <NavigationRailDestination>[
                   NavigationRailDestination(
-                      icon: const Icon(Icons.queue_music_rounded),
-                      selectedIcon: const Icon(Icons.queue_music_rounded),
+                      icon: Icon(Icons.queue_music_rounded),
+                      selectedIcon: Icon(Icons.queue_music_rounded),
                       label: Text(
                         '全部歌曲',
-                        style: const TextStyle(
+                        style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13.0,
                                 color: Color.fromARGB(255, 243, 243, 243))
-                            .useSystemChineseFont(),
+                            ,
                       )),
                   NavigationRailDestination(
-                      icon: const Icon(Icons.star_border_outlined),
-                      selectedIcon: const Icon(Icons.star),
+                      icon: Icon(Icons.star_border_outlined),
+                      selectedIcon: Icon(Icons.star),
                       label: Text(
                         '收藏',
-                        style: const TextStyle(
+                        style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13.0,
-                                color: Color.fromARGB(255, 243, 243, 243))
-                            .useSystemChineseFont(),
+                                color: Color.fromARGB(255, 243, 243, 243)),
                       )),
                 ],
                 selectedIndex: currentIndex,

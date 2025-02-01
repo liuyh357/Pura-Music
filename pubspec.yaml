@@ -45,6 +45,8 @@ dependencies:
   just_audio_windows: ^0.2.2
   audio_metadata_reader: ^1.0.0
   image: ^4.3.0
+  path: ^1.9.0
+  win32: ^5.10.1
 
 
 dev_dependencies:

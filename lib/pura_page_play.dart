@@ -1,13 +1,13 @@
 import 'dart:ui';
-
-import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:pura_music/data_controller.dart';
-import 'package:pura_music/pura_main_app_bar.dart';
+// import 'package:pura_music/pura_main_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:pura_music/pura_page_play_app_bar.dart';
-import 'package:pura_music/tools.dart';
+// import 'package:pura_music/tools.dart';
+import 'package:pura_music/ui/pura_hover_icon_button.dart';
+import 'package:pura_music/ui/pura_progress_bar.dart';
+
 
 class PuraPagePlay extends StatefulWidget {
   const PuraPagePlay({super.key});
@@ -83,8 +83,7 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                               color: Color.fromARGB(255, 108, 108, 108),
                               offset: Offset(0, 0),
                               blurRadius: 20)
-                        ], color: Colors.white)
-                            .useSystemChineseFont(),
+                        ], color: Colors.white),
                       ),
                       const SizedBox(height: 20),
                       Selector<DataController, double>(
@@ -92,16 +91,16 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                         builder: (context, position, child) {
                           return Hero(
                             tag: 'progress',
-                            child: ProgressBar(
+                            child: PuraProgressBar(
                               width: size.width / 2,
                               height: 20,
                               onDragEnd: (p0) {
-                                print('drag end: $p0');
+                                // print('drag end: $p0');
                                 dataController.setPosition(p0);
                               },
                               maxProgress: double.parse(duration),
                               showPercentage: false,
-                              progressFormat: ProgressFormat.decimal,
+                              progressFormat: PuraProgressFormat.decimal,
                               progress: position,
                             ),
                           );
@@ -112,7 +111,7 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            HoverIconButton(
+                            PuraHoverIconButton(
                               icon: const Icon(Icons.skip_previous,
                                   color: Colors.white),
                               onPressed: () {
@@ -120,7 +119,7 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                                 setState(() {});
                               },
                             ),
-                            HoverIconButton(
+                            PuraHoverIconButton(
                               icon: dataController.isPlaying
                                   ? const Icon(Icons.pause, color: Colors.white)
                                   : const Icon(Icons.play_arrow,
@@ -134,7 +133,7 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                                 setState(() {});
                               },
                             ),
-                            HoverIconButton(
+                            PuraHoverIconButton(
                               icon: const Icon(Icons.skip_next,
                                   color: Colors.white),
                               onPressed: () {
