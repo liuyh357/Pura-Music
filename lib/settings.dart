@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pura_music/data_controller.dart';
-import 'package:pura_music/util/file_utils.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});

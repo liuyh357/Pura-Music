@@ -47,6 +47,7 @@ dependencies:
   image: ^4.3.0
   path: ^1.9.0
   win32: ^5.10.1
+  json_serializable: ^6.9.0
 
 
 dev_dependencies:

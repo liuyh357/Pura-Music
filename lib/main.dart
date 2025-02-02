@@ -6,6 +6,7 @@ import 'package:pura_music/pura_main_bottom_bar.dart';
 import 'package:pura_music/pura_main_page_view.dart';
 import 'package:pura_music/pura_navigation_rail.dart';
 import 'package:pura_music/pura_page_play.dart';
+import 'package:pura_music/ui/pura_multiple_radial_gradients.dart';
 import 'package:window_manager/window_manager.dart';
 import 'data_controller.dart';
 
@@ -52,30 +53,27 @@ class MyApp extends StatelessWidget {
       // home: const MyHomePage(title: 'Pura Music'),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        textTheme: TextTheme(
-          displayLarge: const TextStyle().useSystemChineseFont(),
-          displayMedium: const TextStyle().useSystemChineseFont(),
-          displaySmall: const TextStyle().useSystemChineseFont(),
-          headlineLarge: const TextStyle().useSystemChineseFont(),
-          headlineMedium: const TextStyle().useSystemChineseFont(),
-          headlineSmall: const TextStyle().useSystemChineseFont(),
-          titleLarge: const TextStyle().useSystemChineseFont(),
-          titleMedium: const TextStyle().useSystemChineseFont(),
-          titleSmall: const TextStyle().useSystemChineseFont(),
-          bodyLarge: const TextStyle().useSystemChineseFont(),
-          bodyMedium: const TextStyle().useSystemChineseFont(),
-          bodySmall: const TextStyle().useSystemChineseFont(),
-          labelLarge: const TextStyle().useSystemChineseFont(),
-          labelMedium: const TextStyle().useSystemChineseFont(),
-          labelSmall: const TextStyle().useSystemChineseFont(),
-
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
+          textTheme: TextTheme(
+            displayLarge: const TextStyle().useSystemChineseFont(),
+            displayMedium: const TextStyle().useSystemChineseFont(),
+            displaySmall: const TextStyle().useSystemChineseFont(),
+            headlineLarge: const TextStyle().useSystemChineseFont(),
+            headlineMedium: const TextStyle().useSystemChineseFont(),
+            headlineSmall: const TextStyle().useSystemChineseFont(),
+            titleLarge: const TextStyle().useSystemChineseFont(),
+            titleMedium: const TextStyle().useSystemChineseFont(),
+            titleSmall: const TextStyle().useSystemChineseFont(),
+            bodyLarge: const TextStyle().useSystemChineseFont(),
+            bodyMedium: const TextStyle().useSystemChineseFont(),
+            bodySmall: const TextStyle().useSystemChineseFont(),
+            labelLarge: const TextStyle().useSystemChineseFont(),
+            labelMedium: const TextStyle().useSystemChineseFont(),
+            labelSmall: const TextStyle().useSystemChineseFont(),
+          ),
+          textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
             textStyle: const TextStyle().useSystemChineseFont(),
-          )
-        )
-      ),
+          ))),
     );
   }
 }
@@ -93,40 +91,81 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     // var screenSize = MediaQuery.of(context).size;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: [
-        Color.fromARGB(255, 236, 194, 194),
-        Color.fromARGB(255, 238, 151, 145)
-      ])),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: PuraMainAppBar(title: widget.title),
-        body: const Center(
-          child: Stack(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  PuraNavigationRail(),
-                  // VerticalDivider(
-                  //   width: 1,
-                  //   color: Color.fromRGBO(230, 230, 230, 1.0),
-                  // ),
-                  // Text(Provider.of<DataController>(context)
-                  //     .indexOfPuraNavigationRail
-                  //     .toString()),
-                  PuraMainPageView(),
-                ],
-              ),
-              Align(
-                  alignment: Alignment.bottomCenter,
-                  child: PuraMainBottomBar()),
-            ],
+    return Stack(
+      children: [
+        Expanded(
+            child: PuraMultipleRadialGradients(
+              inputPoints: [
+                InputPoint(
+                  const Offset(0.25, 0.25),
+                  const Color.fromARGB(255, 54, 70, 244),
+                  0.19,
+                  0.25,
+                  const Duration(seconds: 2),
+                ),
+                InputPoint(
+                  const Offset(0.75, 0.25),
+                  Colors.blue,
+                  0.28,
+                  0.35,
+                  const Duration(seconds: 3),
+                ),
+                InputPoint(
+                  const Offset(0.6, 0.75),
+                  const Color.fromARGB(255, 76, 172, 175),
+                  0.26,
+                  0.38,
+                  const Duration(seconds: 4),
+                ),
+                InputPoint(
+                  const Offset(0.4, 0.5),
+                  const Color.fromARGB(255, 221, 154, 225),
+                  0.12,
+                  0.28,
+                  const Duration(seconds: 2, microseconds: 450),
+                ),
+                InputPoint(
+                  const Offset(0.1, 0.8),
+                  const Color.fromARGB(255, 0, 250, 129),
+                  0.12,
+                  0.18,
+                  const Duration(seconds: 2, microseconds: 450),
+                ),
+              ],
+              blurRadius: 60.0,
+              backgroundColor: Colors.grey[200]!,
+              // 不指定 targetSize，让组件自动填充剩余空间
+            ),
           ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: PuraMainAppBar(title: widget.title),
+          body: const Center(
+            child: Stack(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PuraNavigationRail(),
+                    // VerticalDivider(
+                    //   width: 1,
+                    //   color: Color.fromRGBO(230, 230, 230, 1.0),
+                    // ),
+                    // Text(Provider.of<DataController>(context)
+                    //     .indexOfPuraNavigationRail
+                    //     .toString()),
+                    PuraMainPageView(),
+                  ],
+                ),
+                Align(
+                    alignment: Alignment.bottomCenter,
+                    child: PuraMainBottomBar()),
+              ],
+            ),
+          ),
+          // bottomNavigationBar: PuraMainBottomBar(),
         ),
-        // bottomNavigationBar: PuraMainBottomBar(),
-      ),
+      ],
     );
   }
 }

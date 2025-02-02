@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+import 'package:pura_music/media_controller.dart';
 import 'package:win32/win32.dart';
 
 /// 包含文件的添加、删除等操作
 class FileUtils {
+  static MediaController mediaController = MediaController.instance;
   static Future<(String, bool)?> pickFolder(BuildContext context) {
     var str = showDialog<(String, bool)>(
       context: context,
@@ -14,7 +17,46 @@ class FileUtils {
     );
     return str;
   }
-  
+
+  static Future<Map<String, dynamic>> decodeJson(String jsonString) async {
+    var result = jsonDecode(jsonString);
+    return result;
+  }
+
+  static Future<void> saveJson(
+      Map<String, dynamic> data, String filePath) async {
+    var jsonString = jsonEncode(data);
+    File(filePath).writeAsStringSync(jsonString);
+  }
+
+  static void addFolder(
+      {required String path, bool withSubFolders = true, bool save = true}) {
+    mediaController.addMusicFolder(path);
+
+    if (withSubFolders) {
+      for (var fileEntity in Directory(path).listSync()) {
+        if (Directory(fileEntity.path).existsSync()) {
+          addFolder(path: fileEntity.path, withSubFolders: true, save: false);
+        }
+      }
+    }
+    if (save) {
+      mediaController.saveDataToJson();
+    }
+  }
+  static void deleteFolder({required String path, bool withSubFolder = false, bool save = true}) {
+    mediaController.removeMusicFolder(path);
+    if (withSubFolder) {
+      for (var fileEntity in Directory(path).listSync()) {
+        if (Directory(fileEntity.path).existsSync()) {
+          deleteFolder(path: fileEntity.path, withSubFolder: true, save: false);
+        }
+      }
+    }
+    if (save) {
+      mediaController.saveDataToJson();
+    }
+  }
 }
 
 class FolderPickerDialog extends StatefulWidget {
@@ -89,6 +131,7 @@ class _FolderPickerDialogState extends State<FolderPickerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      // backgroundColor: Colors.transparent,
       title: Row(
         children: [
           IconButton(
@@ -172,8 +215,7 @@ class _FolderPickerDialogState extends State<FolderPickerDialog> {
                               child: Text('Error: ${snapshot.error}'));
                         } else if (!snapshot.hasData ||
                             snapshot.data!.isEmpty) {
-                          return const Center(
-                              child: Text('当前目录下没有文件或文件夹'));
+                          return const Center(child: Text('当前目录下没有文件或文件夹'));
                         } else {
                           return ListView.builder(
                               itemCount: snapshot.data!.length,

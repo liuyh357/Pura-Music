@@ -5,16 +5,15 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
-import 'settings_controller.dart';
+import 'package:pura_music/util/file_utils.dart';
 import 'dart:io';
 import 'package:watcher/watcher.dart';
 // import 'bass_api/bass_api.dart';
-// import 'package:just_audio/just_audio.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:image/image.dart' as img;
 import 'bass_api/bass.dart';
 import 'bass_api/bass_fx.dart' as bassfx;
-import 'bass_api/bass_mix.dart' as bassmix;
+// import 'bass_api/bass_mix.dart' as bassmix;
 import 'bass_api/bass_wasapi.dart' as basswasapi;
 
 /// 定义 Native 函数类型
@@ -78,7 +77,7 @@ class DataController with ChangeNotifier {
   Timer? _timer; // 定时器
   late bass_api bass;
   late bassfx.bass_fx_api bassFx;
-  late bassmix.bass_mix_api bassMix;
+  // late bassmix.bass_mix_api bassMix;
   late basswasapi.bass_wasapi_api bassWasapi;
   int currentStream = 0;
   int nextStream = 0;
@@ -99,7 +98,9 @@ class DataController with ChangeNotifier {
     File settingsFile = File(settingsPath);
     if (settingsFile.existsSync()) {
       // 加载设置项
-      settings = decodeJson(settingsFile.readAsStringSync());
+      FileUtils.decodeJson(settingsFile.readAsStringSync()).then((value){
+        settings = value;
+      });
     } else {
       _resetSettings(settingsPath);
     }
@@ -177,17 +178,17 @@ class DataController with ChangeNotifier {
   void initBASS() {
     var bassDy = DynamicLibrary.open('$currentDir\\bass.dll');
     var bassfxDy = DynamicLibrary.open('$currentDir\\bass_fx.dll');
-    var bassmixDy = DynamicLibrary.open('$currentDir\\bassmix.dll');
+    // var bassmixDy = DynamicLibrary.open('$currentDir\\bassmix.dll');
     var basswasapiDy = DynamicLibrary.open('$currentDir\\basswasapi.dll');
     bass = bass_api(bassDy);
     bassFx = bassfx.bass_fx_api(bassfxDy);
-    bassMix = bassmix.bass_mix_api(bassmixDy);
+    // bassMix = bassmix.bass_mix_api(bassmixDy);
     bassWasapi = basswasapi.bass_wasapi_api(basswasapiDy);
 
     var version = bassFx.BASS_FX_GetVersion();
     print('BASS_FX version: $version');
 
-    version = bassMix.BASS_Mixer_GetVersion();
+    // version = bassMix.BASS_Mixer_GetVersion();
     print('BASS_Mixer version: $version');
 
     // 设置设备流的缓冲区大小
@@ -197,8 +198,8 @@ class DataController with ChangeNotifier {
       print('BASS_Init failed with error: ${bass.BASS_ErrorGetCode()}');
       return;
     }
-    mainMixer = bassMix.BASS_Mixer_StreamCreate(
-        44100, 2, BASS_STREAM_DECODE | bassmix.BASS_MIXER_QUEUE);
+    // mainMixer = bassMix.BASS_Mixer_StreamCreate(
+    //     44100, 2, BASS_STREAM_DECODE | bassmix.BASS_MIXER_QUEUE);
     if (mainMixer == 0) {
       print(
           'BASS_Mixer_StreamCreate failed with error: ${bass.BASS_ErrorGetCode()}');
@@ -311,10 +312,6 @@ class DataController with ChangeNotifier {
 
     // updateAllMusic(); //!del: 不应该每添加一个文件夹就重新扫描一次全部的音乐文件，应该只扫描新增文件夹下的文件
     return folderPath;
-    // if (containMusic) {
-    //   return folderPath;
-    // }
-    // return "";
   }
 
   bool containMusicFile(String filePath) {
@@ -490,7 +487,6 @@ class DataController with ChangeNotifier {
     return info;
   }
 
-  // todo:获取高清图片
   Uint8List? getMusicImage(String artist, String album) {
     // var key = "${_sanitizeFileName(artist)}-${_sanitizeFileName(album)}";
     var key = _getKey(artist, album);
@@ -555,11 +551,11 @@ class DataController with ChangeNotifier {
     nextStream = loadMusicStream(nextFilePath);
     // Pointer<Void> buf = nullptr;
     // bass.BASS_ChannelGetData(currentStream, buf, 1024);
-    var err = bassMix.BASS_Mixer_StreamAddChannel(mainMixer, currentStream, 0);
-    if (err == 0) {
-      print(
-          'BASS_Mixer_StreamAddChannel failed with error: ${bass.BASS_ErrorGetCode()}, mainMixer: $mainMixer, currentStream: $currentStream, nextStream: $nextStream');
-    }
+    // var err = bassMix.BASS_Mixer_StreamAddChannel(mainMixer, currentStream, 0);
+    // if (err == 0) {
+    //   print(
+    //       'BASS_Mixer_StreamAddChannel failed with error: ${bass.BASS_ErrorGetCode()}, mainMixer: $mainMixer, currentStream: $currentStream, nextStream: $nextStream');
+    // }
 
 
     // err = bass.BASS_ChannelPlay(mainMixer, 0);
@@ -709,8 +705,8 @@ class DataController with ChangeNotifier {
     isPlaying = false;
     // start = DateTime.now();
     // nextMusic();
-    bassMix.BASS_Mixer_StreamAddChannel(mainMixer, nextStream, bassmix.BASS_MIXER_CHAN_NORAMPIN);
-    bassMix.BASS_Mixer_ChannelRemove(currentStream);
+    // bassMix.BASS_Mixer_StreamAddChannel(mainMixer, nextStream, bassmix.BASS_MIXER_CHAN_NORAMPIN);
+    // bassMix.BASS_Mixer_ChannelRemove(currentStream);
     // bass.BASS_ChannelPlay(mainMixer, 0);
     // stopUpdatingPosition(); 
 
