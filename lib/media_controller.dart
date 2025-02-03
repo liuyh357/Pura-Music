@@ -1,4 +1,5 @@
 // 定义基本的播放模式，使用位掩码来表示
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
@@ -13,6 +14,10 @@ import 'bass_api/bass.dart';
 // import 'bass_api/bass_mix.dart' as bassmix;
 // import 'bass_api/bass_wasapi.dart' as basswasapi;
 import 'package:flutter/material.dart';
+
+/// 定义 Native 函数类型
+typedef NativeCallback = Void Function(UnsignedLong handle,
+    UnsignedLong channel, UnsignedLong data, Pointer<Void> user);
 
 /// 定义基本的播放模式，使用位掩码来表示
 enum PlayMode {
@@ -39,7 +44,7 @@ class PlayModeManager {
     return _instance!;
   }
 
-  int _currentMode = 0;
+  int _currentMode = 2;
 
   /// 添加一个或多个播放模式
   void addMode(PlayMode mode) {
@@ -82,20 +87,35 @@ class PlayModeManager {
 ///
 ///   MV播放
 
-class MediaController {
+class MediaController with ChangeNotifier {
   static MediaController? _instance;
 
   MediaController._() {
     _initMusicPlayer();
     loadDataFromJson('media_data.json');
+    _loadImages('images');
   }
 
   static MediaController get instance {
     _instance ??= MediaController._();
     return _instance!;
   }
-/// 从 JSON 字符串中解析数据并更新 MediaController 的状态
-  void loadDataFromJson(String path) {
+
+  Future<void> _loadImages(String path) async {
+    if (!Directory(path).existsSync()) return;
+    List<FileSystemEntity> files = Directory(path).listSync();
+    for (FileSystemEntity file in files) {
+      if (file is File && file.path.endsWith('.jpg')) {
+        String key = file.path.split('\\').last.split('.').first;
+        Uint8List imageData = file.readAsBytesSync();
+        _musicImagesData[key] = imageData;
+      }
+    }
+  }
+
+  /// 从 JSON 字符串中解析数据并更新 MediaController 的状态
+  Future<void> loadDataFromJson(String path) async {
+    if (!File(path).existsSync()) return;
     String jsonString = File(path).readAsStringSync();
     Map<String, dynamic> data = jsonDecode(jsonString);
 
@@ -115,7 +135,7 @@ class MediaController {
     _currentMusicInfo = Map<String, String>.from(data['currentMusicInfo']);
 
     // 更新音乐图像数据
-    _musicImagesData = Map<String, Uint8List>.from(data['musicImagesData']);
+    // _musicImagesData = Map<String, Uint8List>.from(data['musicImagesData']);
 
     // 更新音乐信息
     _musicInfos = Map<String, Map<String, String>>.from(data['musicInfos']);
@@ -125,16 +145,18 @@ class MediaController {
 
     // 更新文件夹音乐列表
     _folderMusicLists = List<(String, List<String>)>.from(
-      data['folderMusicLists'].map((item) => (item[0], List<String>.from(item[1]))),
+      data['folderMusicLists']
+          .map((item) => (item[0], List<String>.from(item[1]))),
     );
 
     // 更新自定义音乐列表
     _customMusicLists = List<(String, List<String>)>.from(
-      data['customMusicLists'].map((item) => (item[0], List<String>.from(item[1]))),
+      data['customMusicLists']
+          .map((item) => (item[0], List<String>.from(item[1]))),
     );
 
-    // 更新当前音乐列表名称
-    _currentMusicListName = data['currentMusicListName'];
+    // 更新当前播放的音乐列表名称
+    _currentPlayingMusicListName = data['currentMusicListName'];
 
     // 更新当前播放歌曲的索引
     _currentIndex = data['currentIndex'];
@@ -142,20 +164,21 @@ class MediaController {
     // 更新音乐文件夹列表
     _musicFolders = List<String>.from(data['musicFolders']);
   }
+
   /// 将当前播放模式和其他相关数据保存为 JSON 格式
-  void saveDataToJson() {
+  Future<void> saveDataToJson() async {
     Map<String, dynamic> data = {
       'playMode': playModeManager.currentModeValue,
       'isPlaying': _isPlaying,
       'currentPosition': _currentPosition,
       'volume': _volume,
       'currentMusicInfo': _currentMusicInfo,
-      'musicImagesData': _musicImagesData,
+      // 'musicImagesData': _musicImagesData,
       'musicInfos': _musicInfos,
       'allMusic': _allMusic,
       'folderMusicLists': _folderMusicLists,
       'customMusicLists': _customMusicLists,
-      'currentMusicListName': _currentMusicListName,
+      'currentMusicListName': _currentPlayingMusicListName,
       'currentIndex': _currentIndex,
       'musicFolders': _musicFolders,
     };
@@ -171,6 +194,11 @@ class MediaController {
   ///当前播放位置 [double] in seconds
   double _currentPosition = 0;
   double get currentPosition => _currentPosition;
+  late Timer _timer;
+
+  ///播放顺序
+  List<int> _playOrder = [];
+  List<int> get playOrder => _playOrder;
 
   ///播放模式相关变量
   PlayModeManager playModeManager = PlayModeManager.instance;
@@ -181,6 +209,8 @@ class MediaController {
 
   ///BASS库
   late bass_api _bass;
+
+  int _currentMusicStream = 0;
 
   // 下一首歌曲的信息，放到元数据中
 
@@ -232,8 +262,15 @@ class MediaController {
   List<(String, List<String>)> get customMusicLists => _customMusicLists;
 
   ///当前列表名字
-  String _currentMusicListName = "allMusic";
-  String get currentMusicListName => _currentMusicListName;
+  String _currentPlayingMusicListName = "unknow..."; //todo：后续要考虑重名的可能性
+  String get currentPlayingMusicListName => _currentPlayingMusicListName;
+
+  String _currentDisplayedMusicListName = 'allMusic';
+  String get currentDisplayedMusicListName => _currentDisplayedMusicListName;
+  set currentDisplayedMusicListName(String value) {
+    _currentDisplayedMusicListName = value;
+    notifyListeners();
+  }
 
   ///当前播放的歌曲在列表中的索引
   int _currentIndex = 0;
@@ -309,19 +346,125 @@ class MediaController {
     }
   }
 
-  void play() {}
-  void pause() {}
-  void start() {}
+  void _setCallback() {
+    var stopSync = NativeCallable<NativeCallback>.listener(_staticStopCallback);
+    var startSync =
+        NativeCallable<NativeCallback>.listener(_staticStartCallback);
+    _bass.BASS_ChannelSetSync(_currentMusicStream, BASS_SYNC_END, 0,
+        stopSync.nativeFunction, nullptr);
+    _bass.BASS_ChannelSetSync(_currentMusicStream, BASS_SYNC_SETPOS, 0,
+        startSync.nativeFunction, nullptr);
+  }
+
+  static void _staticStopCallback(
+      int handle, int channel, int data, Pointer<Void> user) {
+    _instance?._stopCallback();
+  }
+
+  void _stopCallback() {
+    _isPlaying = false;
+    next();
+    _stopUpdatingPosition();
+    notifyListeners();
+  }
+
+  static void _staticStartCallback(
+      int handle, int channel, int data, Pointer<Void> user) {
+    _instance?._startCallback();
+  }
+
+  void _startCallback() {
+    _bass.BASS_ChannelSetAttribute(_currentMusicStream, BASS_ATTRIB_VOL, 0);
+    _bass.BASS_ChannelSlideAttribute(_currentMusicStream, BASS_ATTRIB_VOL, _volume, 20);
+    //todo:可能需要添加一小段延迟？
+  }
+
+//todo: 更改播放列表或者更改播放模式或添加歌曲后要更新播放列表 [ playOrder ]
+  void changePlayingList() {
+    if (_currentDisplayedMusicListName != _currentPlayingMusicListName) {
+      _currentPlayingMusicListName = _currentDisplayedMusicListName;
+      generatePlayOrder();
+    }
+  }
+
+  ///只能由前端（用户端）改变播放列表
+  //todo:index需要根据列表来更改，并且要取模，只在一个地方这样做，其他地方不需要根据列表更改
+  void play(int index) {
+    int newIndex = _playOrder[index%_playOrder.length];
+    if(newIndex==_currentIndex){
+      _start();
+      return;
+    }
+    updateCurrentMusicInfo(newIndex);
+    String path = getPathByIndex(newIndex);
+    _freeMusicStream();
+    _currentMusicStream = _loadMusicStream(path);
+    _isPlaying = true;
+    _setCallback();
+    _bass.BASS_ChannelSetPosition(_currentMusicStream, 0, BASS_POS_BYTE);
+    var err = _bass.BASS_ChannelPlay(_currentMusicStream, 0);
+    if (err == 0) {
+      print(
+          'BASS_ChannelPlay failed with error: ${_bass.BASS_ErrorGetCode()}, _currentMusicStream: $_currentMusicStream');
+    }
+  }
+
+  void pause() {
+    _bass.BASS_ChannelPause(_currentMusicStream);
+    _isPlaying = false;
+    _stopUpdatingPosition();
+    notifyListeners();
+  }
+  
+  void _start() {
+    _bass.BASS_ChannelStart(_currentMusicStream);
+    _isPlaying = true;
+    _startUpdatingPosition();
+    notifyListeners();
+  }
+  ///需要针对单曲循环做处理
   void next() {}
   void previous() {}
-  void seek(double position) {}
+  void setPosition(double position) {
+    if (_currentMusicStream == 0) return;
+    _currentPosition = position;
+    // print('setPosition: $position');
+    var positionInBytes =
+        _bass.BASS_ChannelSeconds2Bytes(_currentMusicStream, position);
+    var err = _bass.BASS_ChannelSetPosition(
+        _currentMusicStream, positionInBytes, BASS_POS_BYTE);
+    if (err != 0) {
+      // print('BASS_ChannelSetPosition failed with error: ${bass.BASS_ErrorGetCode()}');
+    }
+  }
+
+  void _startUpdatingPosition() {
+    // 每100毫秒调用一次updatePosition
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      _updatePosition();
+    });
+  }
+
+  void _stopUpdatingPosition() {
+    _timer.cancel(); // 停止定时器
+  }
+
+  void _updatePosition() {
+    if (_currentMusicStream == 0) return;
+    var positionInBytes =
+        _bass.BASS_ChannelGetPosition(_currentMusicStream, BASS_POS_BYTE);
+    var positionInSeconds =
+        _bass.BASS_ChannelBytes2Seconds(_currentMusicStream, positionInBytes);
+    _currentPosition = positionInSeconds;
+    notifyListeners();
+  }
 
   // 音量控制相关接口
   void setVolume(double newVolume) {}
 
-  void updateCurrentMusicInfo(int index, String listName) {
+  void updateCurrentMusicInfo(int index) {
     _currentIndex = index;
-    _currentMusicListName = listName;
+    _currentPlayingMusicListName = _currentDisplayedMusicListName;
     _currentMusicInfo = _musicInfos[_allMusic[index]]!;
     // var key = _getKey(_currentMusicInfo['artist']!, _currentMusicInfo['album']!);
     // if (_musicImagesData.containsKey(key)) {
@@ -333,9 +476,25 @@ class MediaController {
     //   );
     // }
     currentMusicImage = Image.memory(getMusicImage(index));
-    
+    // notifyListeners();
   }
 
+  int _loadMusicStream(String filePath) {
+    var filePathPtr = filePath.toNativeUtf16();
+    var stream = _bass.BASS_StreamCreateFile(
+        0, filePathPtr.cast<Char>().cast<Void>(), 0, 0, BASS_UNICODE);
+    if (stream == 0) {
+      print(
+          'BASS_StreamCreateFile failed with error: ${_bass.BASS_ErrorGetCode()}');
+    }
+
+    return stream;
+  }
+
+  void _freeMusicStream() {
+    _bass.BASS_StreamFree(_currentMusicStream);
+    _currentMusicStream = 0;
+  }
 
   ///元数据相关接口
   Future<Map<String, String>> getMusicInfo(
@@ -368,7 +527,7 @@ class MediaController {
       String imagePath = '$folderPath\\$key.jpg';
       if (!File(imagePath).existsSync()) {
         if (metaData.pictures.isNotEmpty) {
-          // 保存专辑封面略缩图到images文件夹
+          /// 保存专辑封面略缩图到images文件夹
           // var file = File(imagePath);
 
           var image = img.decodeImage(metaData.pictures.first.bytes);
@@ -416,13 +575,30 @@ class MediaController {
     }
   }
 
+  ///从当前显示的列表获取路径，而不是从当前播放的列表中获取路径
   String getPathByIndex(int index) {
-    if (_currentMusicListName == 'allMusic') {
+    if (_currentDisplayedMusicListName == 'allMusic') {
       return _allMusic[index];
     } else {
       return _customMusicLists
-          .firstWhere((element) => element.$1 == _currentMusicListName)
+          .firstWhere((element) => element.$1 == _currentDisplayedMusicListName)
           .$2[index];
+    }
+  }
+
+  List<String> getDisplayedMusicList() {
+    if (_currentDisplayedMusicListName == 'allMusic') {
+      return _allMusic;
+    } else {
+      return _folderMusicLists
+          .firstWhere((element) => element.$1 == _currentDisplayedMusicListName,
+              orElse: () {
+        return _customMusicLists.firstWhere(
+            (element) => element.$1 == _currentDisplayedMusicListName,
+            orElse: () {
+          return ('', []);
+        });
+      }).$2;
     }
   }
 
@@ -464,6 +640,7 @@ class MediaController {
           addMusic(file.path, path.split('\\').last);
         }
       }
+      notifyListeners();
     }
   }
 
@@ -496,11 +673,14 @@ class MediaController {
         if (!list.$2.contains(path)) {
           list.$2.add(path);
         }
+        notifyListeners();
         return;
       }
     }
     _customMusicLists.add((musicListName, [path]));
+    notifyListeners();
   }
+
   ///移除文件夹以及文件夹下所有歌曲，不包含子文件夹
   Future<void> removeMusicFolder(String path) async {
     if (_musicFolders.contains(path)) {
@@ -511,8 +691,10 @@ class MediaController {
           removeMusic(file.path);
         }
       }
+      notifyListeners();
     }
   }
+
   //todo 从全部歌曲或文件夹列表中删除的歌曲会加入到黑名单中，防止再次读取
   ///从所有列表中删除歌曲
   Future<void> removeMusic(String path) async {
@@ -531,24 +713,28 @@ class MediaController {
     }
   }
 
-  
   void removeMusicFromPlaylist(int index) {}
 
-  // 根据播放模式生成播放顺序列表的函数
-  List<int> generatePlayOrder(List<String> musicPaths) {
+  ///根据播放模式生成播放顺序列表的函数
+  void generatePlayOrder() {
+    var musicPaths = getDisplayedMusicList();
     int musicCount = musicPaths.length;
-    List<int> playOrder = [];
-    var playMode = PlayModeManager.instance;
-    if (playMode.hasMode(PlayMode.sequential)) {
-      playOrder = List.generate(musicCount, (index) => index);
-    } else if (playMode.hasMode(PlayMode.random)) {
-      List<int> orderedList = List.generate(musicCount, (index) => index);
-      orderedList.shuffle(Random());
-    } else if (playMode.hasMode(PlayMode.single)) {
-      playOrder = [_currentIndex];
-    }
+    if (musicCount == 0) return;
 
-    return playOrder;
+    if (playModeManager.hasMode(PlayMode.sequential)) {
+      _playOrder = List.generate(musicCount, (index) => index);
+    } else if (playModeManager.hasMode(PlayMode.random)) {
+      _playOrder = List.generate(musicCount, (index) => index);
+      _playOrder.shuffle(Random());
+      for (int i = 0; i < _playOrder.length; i++) {
+        if (_playOrder[i] == _currentIndex) {
+          _playOrder[i] = _playOrder[_currentIndex];
+          _playOrder[_currentIndex] = _currentIndex;
+        }
+      }
+    } else if (playModeManager.hasMode(PlayMode.single)) {
+      _playOrder = [_currentIndex];
+    }
   }
 
   /// 获取key

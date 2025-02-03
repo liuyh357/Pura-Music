@@ -19,7 +19,7 @@ import 'bass_api/bass_wasapi.dart' as basswasapi;
 /// 定义 Native 函数类型
 typedef NativeCallback = Void Function(UnsignedLong param1, UnsignedLong param2,
     UnsignedLong param3, Pointer<Void> param4);
-typedef WASAPICallback = UnsignedLong Function(Pointer<Void>, UnsignedLong, Pointer<Void>);
+// typedef WASAPICallback = UnsignedLong Function(Pointer<Void>, UnsignedLong, Pointer<Void>);
 
 /// 定义对应的 Dart 函数类型
 typedef DartCallback = void Function(
@@ -713,13 +713,4 @@ class DataController with ChangeNotifier {
     notifyListeners();
   }
 
-  static void _staticWasapiInitCallback(Pointer<Void> buffer, int length, Pointer<Void> user){
-    _instance._wasapiInitCallback(buffer, length, user);
-  }
-
-  int _wasapiInitCallback(Pointer<Void> buffer, int length, Pointer<Void> user){
-
-    return 0;
-  }
-  // todo:实现获取高清图片的函数，并记录到变量中
 }

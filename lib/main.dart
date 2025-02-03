@@ -94,49 +94,49 @@ class _MyHomePageState extends State<MyHomePage> {
     return Stack(
       children: [
         Expanded(
-            child: PuraMultipleRadialGradients(
-              inputPoints: [
-                InputPoint(
-                  const Offset(0.25, 0.25),
-                  const Color.fromARGB(255, 54, 70, 244),
-                  0.19,
-                  0.25,
-                  const Duration(seconds: 2),
-                ),
-                InputPoint(
-                  const Offset(0.75, 0.25),
-                  Colors.blue,
-                  0.28,
-                  0.35,
-                  const Duration(seconds: 3),
-                ),
-                InputPoint(
-                  const Offset(0.6, 0.75),
-                  const Color.fromARGB(255, 76, 172, 175),
-                  0.26,
-                  0.38,
-                  const Duration(seconds: 4),
-                ),
-                InputPoint(
-                  const Offset(0.4, 0.5),
-                  const Color.fromARGB(255, 221, 154, 225),
-                  0.12,
-                  0.28,
-                  const Duration(seconds: 2, microseconds: 450),
-                ),
-                InputPoint(
-                  const Offset(0.1, 0.8),
-                  const Color.fromARGB(255, 0, 250, 129),
-                  0.12,
-                  0.18,
-                  const Duration(seconds: 2, microseconds: 450),
-                ),
-              ],
-              blurRadius: 60.0,
-              backgroundColor: Colors.grey[200]!,
-              // 不指定 targetSize，让组件自动填充剩余空间
-            ),
+          child: PuraMultipleRadialGradients(
+            inputPoints: [
+              InputPoint(
+                const Offset(0.25, 0.25),
+                const Color.fromARGB(255, 54, 70, 244),
+                0.19,
+                0.25,
+                const Duration(seconds: 2),
+              ),
+              InputPoint(
+                const Offset(0.75, 0.25),
+                Colors.blue,
+                0.28,
+                0.35,
+                const Duration(seconds: 3),
+              ),
+              InputPoint(
+                const Offset(0.6, 0.75),
+                const Color.fromARGB(255, 76, 172, 175),
+                0.26,
+                0.38,
+                const Duration(seconds: 4),
+              ),
+              InputPoint(
+                const Offset(0.4, 0.5),
+                const Color.fromARGB(255, 221, 154, 225),
+                0.12,
+                0.28,
+                const Duration(seconds: 2, microseconds: 450),
+              ),
+              InputPoint(
+                const Offset(0.1, 0.8),
+                const Color.fromARGB(255, 0, 250, 129),
+                0.12,
+                0.18,
+                const Duration(seconds: 2, microseconds: 450),
+              ),
+            ],
+            blurRadius: 60.0,
+            backgroundColor: Colors.grey[200]!,
+            // 不指定 targetSize，让组件自动填充剩余空间
           ),
+        ),
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: PuraMainAppBar(title: widget.title),
