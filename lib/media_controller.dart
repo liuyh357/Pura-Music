@@ -375,7 +375,8 @@ class MediaController with ChangeNotifier {
 
   void _startCallback() {
     _bass.BASS_ChannelSetAttribute(_currentMusicStream, BASS_ATTRIB_VOL, 0);
-    _bass.BASS_ChannelSlideAttribute(_currentMusicStream, BASS_ATTRIB_VOL, _volume, 20);
+    _bass.BASS_ChannelSlideAttribute(
+        _currentMusicStream, BASS_ATTRIB_VOL, _volume, 20);
     //todo:可能需要添加一小段延迟？
   }
 
@@ -389,9 +390,9 @@ class MediaController with ChangeNotifier {
 
   ///只能由前端（用户端）改变播放列表
   //todo:index需要根据列表来更改，并且要取模，只在一个地方这样做，其他地方不需要根据列表更改
-  void play(int index) {
-    int newIndex = _playOrder[index%_playOrder.length];
-    if(newIndex==_currentIndex){
+  void play(int index, {bool replay = false}) {
+    int newIndex = _playOrder[index % _playOrder.length];
+    if (newIndex == _currentIndex && !replay) {
       _start();
       return;
     }
@@ -415,13 +416,14 @@ class MediaController with ChangeNotifier {
     _stopUpdatingPosition();
     notifyListeners();
   }
-  
+
   void _start() {
     _bass.BASS_ChannelStart(_currentMusicStream);
     _isPlaying = true;
     _startUpdatingPosition();
     notifyListeners();
   }
+
   ///需要针对单曲循环做处理
   void next() {}
   void previous() {}
@@ -716,25 +718,26 @@ class MediaController with ChangeNotifier {
   void removeMusicFromPlaylist(int index) {}
 
   ///根据播放模式生成播放顺序列表的函数
-  void generatePlayOrder() {
+  void generatePlayOrder(int index) {
     var musicPaths = getDisplayedMusicList();
     int musicCount = musicPaths.length;
     if (musicCount == 0) return;
 
     if (playModeManager.hasMode(PlayMode.sequential)) {
-      _playOrder = List.generate(musicCount, (index) => index);
+      _playOrder = List.generate(musicCount, (index_) => index_);
     } else if (playModeManager.hasMode(PlayMode.random)) {
-      _playOrder = List.generate(musicCount, (index) => index);
-      _playOrder.shuffle(Random());
+      _playOrder = List.generate(musicCount, (index_) => index_);
+      _playOrder.shuffle();
       for (int i = 0; i < _playOrder.length; i++) {
-        if (_playOrder[i] == _currentIndex) {
-          _playOrder[i] = _playOrder[_currentIndex];
-          _playOrder[_currentIndex] = _currentIndex;
+        if (_playOrder[i] == index) {
+          _playOrder[i] = _playOrder[index];
+          _playOrder[index] = index;
         }
       }
     } else if (playModeManager.hasMode(PlayMode.single)) {
-      _playOrder = [_currentIndex];
+      _playOrder = [index];
     }
+    _currentIndex = _playOrder[index%_playOrder.length];
   }
 
   /// 获取key
