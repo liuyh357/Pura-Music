@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pura_music/data_controller.dart';
+import 'package:pura_music/media_controller.dart';
 import 'package:pura_music/pura_page_play.dart';
 import 'package:pura_music/ui/pura_hover_icon_button.dart';
 import 'package:pura_music/ui/pura_progress_bar.dart';
@@ -18,20 +18,20 @@ class PuraMainBottomBar extends StatefulWidget {
 class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
   @override
   Widget build(BuildContext context) {
-    final dataController = Provider.of<DataController>(context);
+    final mediaController = Provider.of<MediaController>(context);
     var size = MediaQuery.sizeOf(context);
-    var duration = dataController.currentMusicInfo['duration']!;
-    return Selector<DataController, (int, String, bool)>(
+    var duration = mediaController.currentMusicInfo['duration']!;
+    return Selector<MediaController, (int, String, bool)>(
       selector: (_, dataController) => (
-        dataController.currentMusicIndex,
-        dataController.currentMusicList,
+        dataController.currentIndex,
+        dataController.currentDisplayedMusicListName,
         dataController.isPlaying
       ),
       shouldRebuild: (prev, next) => prev != next,
       builder: (context, data, child) {
-        var dataController =
-            Provider.of<DataController>(context, listen: false);
-        var info = dataController.currentMusicInfo;
+        // var dataController =
+        //     Provider.of<MediaController>(context, listen: false);
+        var info = mediaController.currentMusicInfo;
         return Padding(
           padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
           child: Material(
@@ -73,7 +73,7 @@ class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
                               height: 50,
                               child: Hero(
                                   tag: 'play',
-                                  child: dataController.currentMusicPicture),
+                                  child: mediaController.currentMusicImage),
                             )),
                       ),
                       Column(
@@ -98,21 +98,21 @@ class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
                                   icon: const Icon(Icons.skip_previous,
                                       color: Colors.white),
                                   onPressed: () {
-                                    dataController.previousMusic();
+                                    mediaController.previous();
                                   },
                                 ),
                                 PuraHoverIconButton(
-                                  icon: dataController.isPlaying
+                                  icon: mediaController.isPlaying
                                       ? const Icon(Icons.pause,
                                           color: Colors.white)
                                       : const Icon(Icons.play_arrow,
                                           color: Colors.white),
                                   onPressed: () {
-                                    if (dataController.isPlaying) {
-                                      dataController.pauseMusic();
+                                    if (mediaController.isPlaying) {
+                                      mediaController.pause();
                                     } else {
                                       // dataController.startMusic();
-                                      dataController.playMusic(dataController.currentMusicIndex, dataController.currentMusicList);
+                                      mediaController.play(mediaController.currentIndex);
                                     }
                                   },
                                 ),
@@ -120,7 +120,7 @@ class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
                                   icon: const Icon(Icons.skip_next,
                                       color: Colors.white),
                                   onPressed: () {
-                                    dataController.nextMusic();
+                                    mediaController.next();
                                   },
                                 ),
                               ],
@@ -128,7 +128,7 @@ class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
                           ),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
-                            child: Selector<DataController, double>(
+                            child: Selector<MediaController, double>(
                               selector: (_, data) => data.currentPosition,
                               builder: (context, position, child) {
                                 return Column(
@@ -141,7 +141,7 @@ class _PuraMainBottomBarState extends State<PuraMainBottomBar> {
                                         height: 20,
                                         onDragEnd: (p0) {
                                           // print('drag end: $p0');
-                                          dataController.setPosition(p0);
+                                          mediaController.setPosition(p0);
                                         },
                                         maxProgress: double.parse(duration),
                                         showPercentage: false,

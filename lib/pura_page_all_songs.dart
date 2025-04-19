@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pura_music/data_controller.dart';
+import 'package:pura_music/media_controller.dart';
 import 'package:pura_music/pura_page_all_songs_card.dart';
 import 'package:pura_music/util/file_utils.dart';
 
@@ -21,7 +21,7 @@ class _PuraPageAllSongsState extends State<PuraPageAllSongs>
     super.build(context); // 确保调用 super.build 以保持状态
     count++;
     var screenWidth = MediaQuery.sizeOf(context).width;
-    var dataController = Provider.of<DataController>(context, listen: false);
+    var mediaController = Provider.of<MediaController>(context, listen: false);
     return ColoredBox(
       color: const Color.fromARGB(0, 232, 239, 243),
       child: Padding(
@@ -35,7 +35,7 @@ class _PuraPageAllSongsState extends State<PuraPageAllSongs>
                   var path = result?.$1;
                   if (context.mounted && path != null) {
                     setState(() {
-                      dataController.addMusicFolder(folderPath: path);
+                      mediaController.addMusicFolder(path);
                       print("add music folder: $path");
                     });
                   }
@@ -48,7 +48,7 @@ class _PuraPageAllSongsState extends State<PuraPageAllSongs>
                   var path = result?.$1;
                   if (context.mounted && path != null) {
                     setState(() {
-                      dataController.removeMusicFolder(folderPath: path);
+                      mediaController.removeMusicFolder(path);
                       print("remove music folder: $path");
                     });
                   }
@@ -59,10 +59,10 @@ class _PuraPageAllSongsState extends State<PuraPageAllSongs>
             ],
           ),
           Expanded(
-            child: Selector<DataController,
+            child: Selector<MediaController,
                 (Map<String, Uint8List>, List<String>)>(
-              selector: (context, dataController) =>
-                  (dataController.musicImages, dataController.allMusic),
+              selector: (context, mediaController) =>
+                  (mediaController.musicImagesData, mediaController.allMusic),
               shouldRebuild: (prev, next) => prev.$2.length != next.$2.length,
               builder: (context, data, child) {
                 return GridView.builder(
@@ -72,22 +72,22 @@ class _PuraPageAllSongsState extends State<PuraPageAllSongs>
                         childAspectRatio: 0.80,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10),
-                    itemCount: dataController.allMusic.length +
+                    itemCount: mediaController.allMusic.length +
                         (screenWidth ~/ 200 > 7 ? 7 : screenWidth ~/ 200),
                     itemBuilder: (context, index) {
-                      if (index < dataController.allMusic.length) {
+                      if (index < mediaController.allMusic.length) {
                         // print("allmusic length: ${dataController.allMusic.length}");
                         // print("allmusic: ${dataController.allMusic}");
                         // 记录图片加载开始时间
                         // DateTime startTime = DateTime.now();
-                        var filePath = dataController.allMusic[index];
-                        var info = dataController.getMusicInfoByPath(filePath);
+                        var filePath = mediaController.allMusic[index];
+                        var info = mediaController.getMusicInfoByPath(filePath);
                         String songName = info['title']!;
                         String artistName = info['artist']!;
                         String albumName = info['album']!;
 
                         var imgBytes =
-                            dataController.getMusicImage(artistName, albumName);
+                            mediaController.getMusicImage(index);
                         Image img;
                         if (imgBytes != null) {
                           img = Image.memory(imgBytes);

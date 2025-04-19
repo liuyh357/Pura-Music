@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:pura_music/media_controller.dart';
 
 import 'data_controller.dart';
 
@@ -22,7 +23,7 @@ class PuraPageAllSongsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var dataController = Provider.of<DataController>(context, listen: false);
+    // var mediaController = Provider.of<MediaController>(context, listen: false);
     // var album = albumName;
     // var artist = artistName;
     // var imageBytes = dataController.getMusicImage(artist, album);
@@ -35,8 +36,7 @@ class PuraPageAllSongsCard extends StatelessWidget {
           shape: const ContinuousRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(25.0)),
           ),
-          child: _MusicPicture(
-              dataController: dataController, index: index, child: child),
+          child: _MusicPicture(index: index, child: child),
         ),
         Text(songName, style: const TextStyle(overflow: TextOverflow.ellipsis)),
         Text("$artistName-$albumName",
@@ -48,10 +48,9 @@ class PuraPageAllSongsCard extends StatelessWidget {
 
 class _MusicPicture extends StatefulWidget {
   final Widget child;
-  final DataController dataController;
   final int index;
   const _MusicPicture(
-      {required this.child, required this.dataController, required this.index});
+      {required this.child, required this.index});
   @override
   State<StatefulWidget> createState() {
     return _MusicPictureState();
@@ -83,11 +82,12 @@ class _MusicPictureState extends State<_MusicPicture>
   bool isCurrent = false;
   @override
   Widget build(BuildContext context) {
+    var mediaController = Provider.of<MediaController>(context, listen: false);
     return MouseRegion(
       onEnter: (event) {
         setState(() {
-          bool isPlaying = widget.dataController.isPlaying;
-          int index = widget.dataController.currentMusicIndex;
+          bool isPlaying = mediaController.isPlaying;
+          int index = mediaController.currentIndex;
           isCurrent = (index == widget.index) && isPlaying;
           isHover = true;
           _controller.forward();
@@ -115,18 +115,18 @@ class _MusicPictureState extends State<_MusicPicture>
                           sigmaX: _animation.value, sigmaY: _animation.value),
                       child: InkWell(
                         onTap: () {
-                          bool isPlaying = widget.dataController.isPlaying;
-                          int index = widget.dataController.currentMusicIndex;
+                          bool isPlaying = mediaController.isPlaying;
+                          int index = mediaController.currentIndex;
                           if (!isPlaying || index != widget.index) {
                             // print("play");
-                            widget.dataController
-                                .playMusic(widget.index, "allMusic");
+                            mediaController
+                                .play(widget.index);
                           } else {
                             // print("pause");
-                            widget.dataController.pauseMusic();
+                            mediaController.pause();
                           }
-                          isPlaying = widget.dataController.isPlaying;
-                          index = widget.dataController.currentMusicIndex;
+                          isPlaying = mediaController.isPlaying;
+                          index = mediaController.currentIndex;
                           setState(() {
                             isCurrent = (index == widget.index) && isPlaying;
                             // print(

@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:pura_music/data_controller.dart';
+import 'package:pura_music/media_controller.dart';
 // import 'package:pura_music/pura_main_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:pura_music/pura_page_play_app_bar.dart';
@@ -21,19 +21,19 @@ class _PuraPagePlayState extends State<PuraPagePlay>
   @override
   Widget build(BuildContext context) {
     super.build(context); // 调用 AutomaticKeepAliveClientMixin 的 build 方法
-    final dataController = Provider.of<DataController>(context, listen: false);
+    final mediaController = Provider.of<MediaController>(context, listen: false);
     var size = MediaQuery.sizeOf(context);
 
-    var duration = dataController.currentMusicInfo['duration']!;
+    var duration = mediaController.currentMusicInfo['duration']!;
 
     return Stack(
       children: [
-        Selector<DataController, Map<String, String>>(
+        Selector<MediaController, Map<String, String>>(
           selector: (_, data) => data.currentMusicInfo,
           builder: (context, musicInfo, child) {
             var artist = musicInfo['artist']!;
             var album = musicInfo['album']!;
-            var bytes = dataController.getMusicImage(artist, album)!;
+            var bytes = mediaController.getMusicImage(mediaController.currentIndex);
             return Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -51,11 +51,11 @@ class _PuraPagePlayState extends State<PuraPagePlay>
           child: Scaffold(
             backgroundColor: Colors.black26,
             appBar: const PuraPagePlayAppBar(),
-            body: Selector<DataController, (int, Widget)>(
+            body: Selector<MediaController, (int, Widget)>(
               selector: (_, data) =>
-                  (data.currentMusicIndex, data.currentMusicPicture),
+                  (data.currentIndex, data.currentMusicImage),
               builder: (context, data, child) {
-                var info = dataController.currentMusicInfo;
+                var info = mediaController.currentMusicInfo;
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -86,7 +86,7 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                         ], color: Colors.white),
                       ),
                       const SizedBox(height: 20),
-                      Selector<DataController, double>(
+                      Selector<MediaController, double>(
                         selector: (_, data) => data.currentPosition,
                         builder: (context, position, child) {
                           return Hero(
@@ -96,7 +96,7 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                               height: 20,
                               onDragEnd: (p0) {
                                 // print('drag end: $p0');
-                                dataController.setPosition(p0);
+                                mediaController.setPosition(p0);
                               },
                               maxProgress: double.parse(duration),
                               showPercentage: false,
@@ -115,20 +115,20 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                               icon: const Icon(Icons.skip_previous,
                                   color: Colors.white),
                               onPressed: () {
-                                dataController.previousMusic();
+                                mediaController.previous();
                                 setState(() {});
                               },
                             ),
                             PuraHoverIconButton(
-                              icon: dataController.isPlaying
+                              icon: mediaController.isPlaying
                                   ? const Icon(Icons.pause, color: Colors.white)
                                   : const Icon(Icons.play_arrow,
                                       color: Colors.white),
                               onPressed: () {
-                                if (dataController.isPlaying) {
-                                  dataController.pauseMusic();
+                                if (mediaController.isPlaying) {
+                                  mediaController.pause();
                                 } else {
-                                  dataController.startMusic();
+                                  mediaController.play(mediaController.currentIndex);
                                 }
                                 setState(() {});
                               },
@@ -137,7 +137,7 @@ class _PuraPagePlayState extends State<PuraPagePlay>
                               icon: const Icon(Icons.skip_next,
                                   color: Colors.white),
                               onPressed: () {
-                                dataController.nextMusic();
+                                mediaController.next();
                                 setState(() {});
                               },
                             ),

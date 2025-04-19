@@ -350,10 +350,63 @@ class MediaController with ChangeNotifier {
     var stopSync = NativeCallable<NativeCallback>.listener(_staticStopCallback);
     var startSync =
         NativeCallable<NativeCallback>.listener(_staticStartCallback);
+    // 新增同步回调，在当前音乐播放到剩余 50ms 时触发
+    var preloadSync =
+        NativeCallable<NativeCallback>.listener(_staticPreloadCallback);
+
     _bass.BASS_ChannelSetSync(_currentMusicStream, BASS_SYNC_END, 0,
         stopSync.nativeFunction, nullptr);
     _bass.BASS_ChannelSetSync(_currentMusicStream, BASS_SYNC_SETPOS, 0,
         startSync.nativeFunction, nullptr);
+
+    // 获取当前音乐的总时长
+    var lengthInBytes =
+        _bass.BASS_ChannelGetLength(_currentMusicStream, BASS_POS_BYTE);
+    var lengthInSeconds =
+        _bass.BASS_ChannelBytes2Seconds(_currentMusicStream, lengthInBytes);
+    // 计算剩余 50ms 的位置
+    var preloadPositionInSeconds = lengthInSeconds - 0.05;
+    var preloadPositionInBytes = _bass.BASS_ChannelSeconds2Bytes(
+        _currentMusicStream, preloadPositionInSeconds);
+
+    _bass.BASS_ChannelSetSync(
+        _currentMusicStream,
+        BASS_SYNC_POS | BASS_SYNC_ONETIME,
+        preloadPositionInBytes,
+        preloadSync.nativeFunction,
+        nullptr);
+  }
+
+  static void _staticPreloadCallback(
+      int handle, int channel, int data, Pointer<Void> user) {
+    _instance?._preloadNextMusic();
+  }
+
+  void _preloadNextMusic() {
+    // 计算下一首的索引
+    int nextIndex = (_currentIndex + 1) % getDisplayedMusicList().length;
+    String nextPath = getPathByIndex(nextIndex);
+
+    // 加载下一首音乐流
+    int nextStream = _loadMusicStream(nextPath);
+    if (nextStream != 0) {
+      // 提前播放下一首音乐
+      _bass.BASS_ChannelSetPosition(nextStream, 0, BASS_POS_BYTE);
+      _bass.BASS_ChannelPlay(nextStream, 0);
+      if (_stopTime != null) {
+        int interval = DateTime.now().difference(_stopTime!).inMilliseconds;
+        print('Time interval from stop to start: $interval ms');
+      }
+      // 重置停止时间
+      _stopTime = null;
+      // 切换当前音乐流到下一首
+      _freeMusicStream();
+      _currentMusicStream = nextStream;
+      updateCurrentMusicInfo(nextIndex);
+      _isPlaying = true;
+      _setCallback();
+      notifyListeners();
+    }
   }
 
   static void _staticStopCallback(
@@ -361,8 +414,11 @@ class MediaController with ChangeNotifier {
     _instance?._stopCallback();
   }
 
+  DateTime? _stopTime;
   void _stopCallback() {
     _isPlaying = false;
+    // 记录停止时间
+    _stopTime = DateTime.now();
     next();
     _stopUpdatingPosition();
     notifyListeners();
@@ -374,9 +430,20 @@ class MediaController with ChangeNotifier {
   }
 
   void _startCallback() {
-    _bass.BASS_ChannelSetAttribute(_currentMusicStream, BASS_ATTRIB_VOL, 0);
+    print('_startCallback');
+
+    // _bass.BASS_ChannelSetAttribute(_currentMusicStream, BASS_ATTRIB_VOL, 0);
+    // _bass.BASS_ChannelSlideAttribute(
+    //     _currentMusicStream, BASS_ATTRIB_VOL, 0, 10);
     _bass.BASS_ChannelSlideAttribute(
-        _currentMusicStream, BASS_ATTRIB_VOL, _volume, 20);
+        _currentMusicStream, BASS_ATTRIB_VOL, _volume, 10);
+    // 计算从停止到开始的时间间隔
+    if (_stopTime != null) {
+      int interval = DateTime.now().difference(_stopTime!).inMilliseconds;
+      print('Time interval from stop to start: $interval ms');
+    }
+    // 重置停止时间
+    _stopTime = null;
     //todo:可能需要添加一小段延迟？
   }
 
@@ -384,14 +451,23 @@ class MediaController with ChangeNotifier {
   void changePlayingList() {
     if (_currentDisplayedMusicListName != _currentPlayingMusicListName) {
       _currentPlayingMusicListName = _currentDisplayedMusicListName;
-      generatePlayOrder();
+      generatePlayOrder(_currentIndex);
     }
   }
 
   ///只能由前端（用户端）改变播放列表
   //todo:index需要根据列表来更改，并且要取模，只在一个地方这样做，其他地方不需要根据列表更改
   void play(int index, {bool replay = false}) {
+    print('play: $index');
+    if (_playOrder.isEmpty) {
+      generatePlayOrder(index);
+    }
+    if (_playOrder.isEmpty) {
+      return;
+    }
+    print('_playOrder: $_playOrder');
     int newIndex = _playOrder[index % _playOrder.length];
+    print('newIndex: $newIndex');
     if (newIndex == _currentIndex && !replay) {
       _start();
       return;
@@ -404,7 +480,7 @@ class MediaController with ChangeNotifier {
     _setCallback();
     _bass.BASS_ChannelSetPosition(_currentMusicStream, 0, BASS_POS_BYTE);
     var err = _bass.BASS_ChannelPlay(_currentMusicStream, 0);
-    if (err == 0) {
+    if (err != 0) {
       print(
           'BASS_ChannelPlay failed with error: ${_bass.BASS_ErrorGetCode()}, _currentMusicStream: $_currentMusicStream');
     }
@@ -425,8 +501,14 @@ class MediaController with ChangeNotifier {
   }
 
   ///需要针对单曲循环做处理
-  void next() {}
-  void previous() {}
+  void next() {
+    play(currentIndex + 1);
+  }
+
+  void previous() {
+    play(currentIndex - 1);
+  }
+
   void setPosition(double position) {
     if (_currentMusicStream == 0) return;
     _currentPosition = position;
@@ -499,8 +581,8 @@ class MediaController with ChangeNotifier {
   }
 
   ///元数据相关接口
-  Future<Map<String, String>> getMusicInfo(
-      {required String filePath, bool getImage = false}) async {
+  Map<String, String> getMusicInfo(
+      {required String filePath, bool getImage = false}) {
     // 获取音乐文件的信息
     final track = File(filePath);
     final metaData = readMetadata(track, getImage: getImage);
@@ -568,12 +650,12 @@ class MediaController with ChangeNotifier {
     }
   }
 
-  Future<Map<String, String>> getMusicInfoByPath(String path) async {
+  Map<String, String> getMusicInfoByPath(String path) {
     if (_musicInfos.containsKey(path)) {
       return _musicInfos[path]!;
     } else {
       // print("musicInfos not contain $path");
-      return await getMusicInfo(filePath: path, getImage: true);
+      return getMusicInfo(filePath: path, getImage: true);
     }
   }
 
@@ -722,7 +804,7 @@ class MediaController with ChangeNotifier {
     var musicPaths = getDisplayedMusicList();
     int musicCount = musicPaths.length;
     if (musicCount == 0) return;
-
+    //todo: 这里需要考虑播放模式的优先级，比如顺序模式和单曲循环模式同时存在，应该先判断单曲模式
     if (playModeManager.hasMode(PlayMode.sequential)) {
       _playOrder = List.generate(musicCount, (index_) => index_);
     } else if (playModeManager.hasMode(PlayMode.random)) {
@@ -737,7 +819,7 @@ class MediaController with ChangeNotifier {
     } else if (playModeManager.hasMode(PlayMode.single)) {
       _playOrder = [index];
     }
-    _currentIndex = _playOrder[index%_playOrder.length];
+    _currentIndex = _playOrder[index % _playOrder.length];
   }
 
   /// 获取key
