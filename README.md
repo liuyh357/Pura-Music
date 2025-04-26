@@ -4,6 +4,9 @@ A new Flutter project.
 
 ## Getting Started
 
+## 0426 bugs:
+yuheng无法播放音乐，调试阶段无法选择歌曲和文件夹，metadata无法获取
+
 This project is a starting point for a Flutter application.
 
 A few resources to get you started if this is your first Flutter project:
